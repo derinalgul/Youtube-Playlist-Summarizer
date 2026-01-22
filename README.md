@@ -1,4 +1,3 @@
-# Youtube-Playlist-Summarizer
 # YouTube Knowledge Base - Project Prompt
 
 ## Overview
