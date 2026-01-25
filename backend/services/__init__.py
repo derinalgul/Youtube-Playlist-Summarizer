@@ -10,8 +10,14 @@ from backend.services.video_processor import (
     VideoProcessorError,
     VideoUnavailableError,
 )
+from backend.services.transcription import (
+    NoCaptionsAvailableError,
+    TranscriptionError,
+    TranscriptionService,
+)
 
 __all__ = [
+    # Video Processor
     "AudioExtractionError",
     "CaptionExtractionError",
     "MetadataExtractionError",
@@ -20,4 +26,8 @@ __all__ = [
     "VideoProcessor",
     "VideoProcessorError",
     "VideoUnavailableError",
+    # Transcription Service
+    "NoCaptionsAvailableError",
+    "TranscriptionError",
+    "TranscriptionService",
 ]
