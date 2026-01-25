@@ -51,7 +51,7 @@ Build a web application that converts YouTube playlists into an intelligent, sea
 - Video player with timestamp navigation
 - Transcript viewer with highlighting
 
-## Proposed Folder Structure
+## Folder Structure
 
 ```
 youtube-knowledge-base/
