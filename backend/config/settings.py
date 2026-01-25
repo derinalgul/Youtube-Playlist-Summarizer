@@ -31,6 +31,7 @@ class Settings(BaseSettings):
         env_prefix = "YKB_"  # YouTube Knowledge Base
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"  # Ignore extra env vars like OPENAI_API_KEY
 
 
 # Global settings instance

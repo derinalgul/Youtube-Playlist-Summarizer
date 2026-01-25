@@ -129,6 +129,9 @@ class VideoProcessor:
         # Initialize cache
         self._cache = Cache(str(self.cache_dir / "metadata"))
 
+        # Initialize transcript API instance
+        self._transcript_api = YouTubeTranscriptApi()
+
         # yt-dlp options for metadata extraction
         self._ydl_opts_metadata = {
             "quiet": settings.ytdlp_quiet,
@@ -475,7 +478,7 @@ class VideoProcessor:
             Tuple of (manual_languages, auto_generated_languages).
         """
         try:
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            transcript_list = self._transcript_api.list(video_id)
 
             manual_langs = []
             auto_langs = []
@@ -504,7 +507,7 @@ class VideoProcessor:
         Returns:
             Tuple of (transcript_data, caption_type, language).
         """
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        transcript_list = self._transcript_api.list(video_id)
 
         if prefer_manual:
             # Try manual first
@@ -513,7 +516,9 @@ class VideoProcessor:
                     language_codes
                 )
                 data = transcript.fetch()
-                return data, CaptionType.MANUAL, transcript.language_code
+                # Convert FetchedTranscriptSnippet objects to dicts
+                data_dicts = [{"text": s.text, "start": s.start, "duration": s.duration} for s in data]
+                return data_dicts, CaptionType.MANUAL, transcript.language_code
             except NoTranscriptFound:
                 pass
 
@@ -521,7 +526,8 @@ class VideoProcessor:
         try:
             transcript = transcript_list.find_generated_transcript(language_codes)
             data = transcript.fetch()
-            return data, CaptionType.AUTO_GENERATED, transcript.language_code
+            data_dicts = [{"text": s.text, "start": s.start, "duration": s.duration} for s in data]
+            return data_dicts, CaptionType.AUTO_GENERATED, transcript.language_code
         except NoTranscriptFound:
             pass
 
@@ -529,12 +535,13 @@ class VideoProcessor:
         for transcript in transcript_list:
             try:
                 data = transcript.fetch()
+                data_dicts = [{"text": s.text, "start": s.start, "duration": s.duration} for s in data]
                 caption_type = (
                     CaptionType.MANUAL
                     if not transcript.is_generated
                     else CaptionType.AUTO_GENERATED
                 )
-                return data, caption_type, transcript.language_code
+                return data_dicts, caption_type, transcript.language_code
             except Exception:
                 continue
 
