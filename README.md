@@ -30,7 +30,7 @@ Build a web application that converts YouTube playlists into an intelligent, sea
 - Vector DB setup (ChromaDB)
 - Semantic search functionality
 
-### Module 4: LLM Query Engine
+### Module 4: LLM Query Engine ✅
 - Question processing and embedding
 - Relevant chunk retrieval
 - Context assembly for LLM

@@ -24,6 +24,15 @@ from backend.services.embeddings import (
     TextChunk,
     chunk_transcript,
 )
+from backend.services.query_engine import (
+    Citation,
+    ConversationHistory,
+    Message,
+    NoResultsError,
+    QueryEngine,
+    QueryEngineError,
+    QueryResponse,
+)
 
 __all__ = [
     # Video Processor
@@ -47,4 +56,12 @@ __all__ = [
     "SearchResult",
     "TextChunk",
     "chunk_transcript",
+    # Query Engine
+    "Citation",
+    "ConversationHistory",
+    "Message",
+    "NoResultsError",
+    "QueryEngine",
+    "QueryEngineError",
+    "QueryResponse",
 ]
