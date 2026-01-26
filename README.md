@@ -12,19 +12,19 @@ Build a web application that converts YouTube playlists into an intelligent, sea
 
 ## Project Modules
 
-### Module 1: Video Processor ✅
+### Module 1: Video Processor 
 - YouTube URL parsing and validation
 - Metadata extraction (title, duration, thumbnail, channel)
 - Caption detection and downloading
 - Cache management to avoid re-processing
 
-### Module 2: Transcription Service ✅
+### Module 2: Transcription Service 
 - Manual caption preference (prioritized over auto-generated)
 - Auto-generated caption fallback (~95% of videos have these)
 - Timestamp alignment and formatting
 - Transcript caching and retrieval
 
-### Module 3: Vector Database & Embeddings ✅
+### Module 3: Vector Database & Embeddings 
 - Text chunking strategy (preserve context + timestamps)
 - Embedding generation (OpenAI text-embedding-3-small)
 - Vector DB setup (ChromaDB)
