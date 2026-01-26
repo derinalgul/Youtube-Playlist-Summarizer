@@ -15,6 +15,15 @@ from backend.services.transcription import (
     TranscriptionError,
     TranscriptionService,
 )
+from backend.services.embeddings import (
+    ChunkingError,
+    EmbeddingGenerationError,
+    EmbeddingsError,
+    EmbeddingsService,
+    SearchResult,
+    TextChunk,
+    chunk_transcript,
+)
 
 __all__ = [
     # Video Processor
@@ -30,4 +39,12 @@ __all__ = [
     "NoCaptionsAvailableError",
     "TranscriptionError",
     "TranscriptionService",
+    # Embeddings Service
+    "ChunkingError",
+    "EmbeddingGenerationError",
+    "EmbeddingsError",
+    "EmbeddingsService",
+    "SearchResult",
+    "TextChunk",
+    "chunk_transcript",
 ]

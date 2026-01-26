@@ -1,7 +1,7 @@
 """Configuration settings for the YouTube Knowledge Base."""
 
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from pydantic_settings import BaseSettings
 
@@ -35,4 +35,16 @@ class Settings(BaseSettings):
 
 
 # Global settings instance
-settings = Settings()
+_settings: Optional[Settings] = None
+
+
+def get_settings() -> Settings:
+    """Get the global settings instance (lazy initialization)."""
+    global _settings
+    if _settings is None:
+        _settings = Settings()
+    return _settings
+
+
+# Backwards compatibility
+settings = get_settings()

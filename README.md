@@ -24,10 +24,10 @@ Build a web application that converts YouTube playlists into an intelligent, sea
 - Timestamp alignment and formatting
 - Transcript caching and retrieval
 
-### Module 3: Vector Database & Embeddings
+### Module 3: Vector Database & Embeddings ✅
 - Text chunking strategy (preserve context + timestamps)
-- Embedding generation (OpenAI/similar)
-- Vector DB setup (Pinecone or Chroma)
+- Embedding generation (OpenAI text-embedding-3-small)
+- Vector DB setup (ChromaDB)
 - Semantic search functionality
 
 ### Module 4: LLM Query Engine

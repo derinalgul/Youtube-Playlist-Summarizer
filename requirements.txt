@@ -14,5 +14,10 @@ pydantic-settings>=2.0.0
 # Utilities
 python-dateutil>=2.8.0
 
+# Vector Database & Embeddings
+chromadb>=0.4.0
+openai>=1.0.0
+
 # Testing
 pytest>=7.0.0
+python-dotenv>=1.0.0
