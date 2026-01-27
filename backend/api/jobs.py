@@ -123,7 +123,7 @@ class JobManager:
         """Process a single video."""
         # Get metadata
         metadata = await asyncio.to_thread(
-            self._video_processor.get_metadata, video_id
+            self._video_processor.get_video_metadata, video_id
         )
 
         video_info = VideoInfo(

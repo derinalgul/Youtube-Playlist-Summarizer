@@ -95,9 +95,9 @@ async def submit_video(
             raise URLParsingError(parsed.error_message or "Invalid YouTube URL")
 
         if parsed.source_type == VideoSource.PLAYLIST:
-            # Get all video IDs from playlist
-            playlist_info = video_processor.get_playlist_videos(parsed.playlist_id)
-            video_ids = [v["video_id"] for v in playlist_info["videos"]]
+            # Get playlist metadata to get video IDs
+            playlist_meta = video_processor.get_playlist_metadata(parsed.playlist_id)
+            video_ids = playlist_meta.video_ids
             message = f"Playlist submitted with {len(video_ids)} videos"
         else:
             video_ids = [parsed.video_id]
