@@ -43,12 +43,11 @@ Build a web application that converts YouTube playlists into an intelligent, sea
 - Request/response schemas with validation
 - Error handling and validation
 
-### Module 6: Frontend Interface
+### Module 6: Frontend Interface ✅
 - Playlist submission form
 - Processing status dashboard
 - Chat interface for questions
 - Video player with timestamp navigation
-- Transcript viewer with highlighting
 
 ## Folder Structure
 
@@ -56,22 +55,65 @@ Build a web application that converts YouTube playlists into an intelligent, sea
 youtube-knowledge-base/
 ├── backend/
 │   ├── api/                 # FastAPI routes
-│   ├── services/            # Core business logic modules
+│   ├── services/            # Core business logic
 │   │   ├── video_processor.py
 │   │   ├── transcription.py
 │   │   ├── embeddings.py
-│   │   └── llm_query.py
-│   ├── models/              # Database models
-│   ├── utils/               # Helper functions
-│   └── config/              # Configuration files
+│   │   └── query_engine.py
+│   ├── models/              # Data models
+│   └── config/              # Configuration
 ├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── services/        # API calls
-│   │   └── utils/
-├── tests/
+│   └── src/
+│       ├── components/      # React components
+│       └── services/        # API calls
+├── tests/                   # pytest tests
 ├── docs/
-└── scripts/                 # Setup/migration scripts
+└── scripts/
 ```
 
+## How to Run
+
+### Prerequisites
+- Python 3.9+
+- Node.js 18+
+- OpenAI API key
+
+### Setup
+
+1. **Install Python dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Create `.env` file:**
+   ```
+   OPENAI_API_KEY=your_api_key_here
+   ```
+
+3. **Install frontend dependencies:**
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+### Running the Application
+
+1. **Start the backend API:**
+   ```bash
+   python3 -m uvicorn backend.api.app:app --reload
+   ```
+
+2. **Start the frontend (in a new terminal):**
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+
+3. **Open your browser:**
+   - Frontend: http://localhost:3000
+   - API docs: http://localhost:8000/docs
+
+### Running Tests
+```bash
+python3 -m pytest tests/ -v
+```
