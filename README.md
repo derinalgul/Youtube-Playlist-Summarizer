@@ -12,38 +12,38 @@ Build a web application that converts YouTube playlists into an intelligent, sea
 
 ## Project Modules
 
-### Module 1: Video Processor ✅
+### Module 1: Video Processor 
 - YouTube URL parsing and validation
 - Metadata extraction (title, duration, thumbnail, channel)
 - Caption detection and downloading
 - Cache management to avoid re-processing
 
-### Module 2: Transcription Service ✅
+### Module 2: Transcription Service 
 - Manual caption preference (prioritized over auto-generated)
 - Auto-generated caption fallback (~95% of videos have these)
 - Timestamp alignment and formatting
 - Transcript caching and retrieval
 
-### Module 3: Vector Database & Embeddings ✅
+### Module 3: Vector Database & Embeddings 
 - Text chunking strategy (preserve context + timestamps)
 - Embedding generation (OpenAI text-embedding-3-small)
 - Vector DB setup (ChromaDB)
 - Semantic search functionality
 
-### Module 4: LLM Query Engine ✅
+### Module 4: LLM Query Engine 
 - Question processing and embedding
 - Relevant chunk retrieval
 - Context assembly for LLM
 - Answer synthesis with timestamp citations
 - Conversation history management
 
-### Module 5: API Backend ✅
+### Module 5: API Backend 
 - RESTful endpoints (submit playlist, query, get status)
 - Background job processing (async video indexing)
 - Request/response schemas with validation
 - Error handling and validation
 
-### Module 6: Frontend Interface ✅
+### Module 6: Frontend Interface 
 - Playlist submission form
 - Processing status dashboard
 - Chat interface for questions
@@ -52,23 +52,64 @@ Build a web application that converts YouTube playlists into an intelligent, sea
 ## Folder Structure
 
 ```
-youtube-knowledge-base/
-├── backend/
-│   ├── api/                 # FastAPI routes
-│   ├── services/            # Core business logic
-│   │   ├── video_processor.py
-│   │   ├── transcription.py
-│   │   ├── embeddings.py
-│   │   └── query_engine.py
-│   ├── models/              # Data models
-│   └── config/              # Configuration
-├── frontend/
-│   └── src/
-│       ├── components/      # React components
-│       └── services/        # API calls
-├── tests/                   # pytest tests
-├── docs/
-└── scripts/
+|-- .env
+|-- .gitignore
+|-- .gitkeep
+|-- .pytest_cache
+    |-- .gitignore
+    |-- CACHEDIR.TAG
+    |-- README.md
+    |-- v
+|-- README.md
+|-- backend
+    |-- __init__.py
+    |-- api
+        |-- __init__.py
+        |-- app.py
+        |-- jobs.py
+        |-- routes.py
+        |-- schemas.py
+    |-- config
+        |-- __init__.py
+        |-- settings.py
+    |-- models
+        |-- __init__.py
+        |-- video.py
+    |-- services
+        |-- __init__.py
+        |-- embeddings.py
+        |-- query_engine.py
+        |-- transcription.py
+        |-- video_processor.py
+|-- docs
+    |-- .gitkeep
+|-- frontend
+    |-- index.html
+    |-- package-lock.json
+    |-- package.json
+    |-- src
+        |-- App.jsx
+        |-- components
+            |-- ChatInterface.jsx
+            |-- JobStatus.jsx
+            |-- Stats.jsx
+            |-- VideoPlayer.jsx
+            |-- VideoSubmitForm.jsx
+        |-- index.css
+        |-- main.jsx
+        |-- services
+            |-- api.js
+    |-- vite.config.js
+|-- requirements.txt
+|-- scripts
+    |-- .gitkeep
+|-- tests
+    |-- .gitkeep
+    |-- test_api.py
+    |-- test_embeddings.py
+    |-- test_query_engine.py
+    |-- test_transcription.py
+    |-- test_video_processor.py
 ```
 
 ## How to Run

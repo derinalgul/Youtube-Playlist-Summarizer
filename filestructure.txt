@@ -1,0 +1,57 @@
+|-- .env
+|-- .gitignore
+|-- .gitkeep
+|-- .pytest_cache
+    |-- .gitignore
+    |-- CACHEDIR.TAG
+    |-- README.md
+    |-- v
+|-- README.md
+|-- backend
+    |-- __init__.py
+    |-- api
+        |-- __init__.py
+        |-- app.py
+        |-- jobs.py
+        |-- routes.py
+        |-- schemas.py
+    |-- config
+        |-- __init__.py
+        |-- settings.py
+    |-- models
+        |-- __init__.py
+        |-- video.py
+    |-- services
+        |-- __init__.py
+        |-- embeddings.py
+        |-- query_engine.py
+        |-- transcription.py
+        |-- video_processor.py
+|-- docs
+    |-- .gitkeep
+|-- frontend
+    |-- index.html
+    |-- package-lock.json
+    |-- package.json
+    |-- src
+        |-- App.jsx
+        |-- components
+            |-- ChatInterface.jsx
+            |-- JobStatus.jsx
+            |-- Stats.jsx
+            |-- VideoPlayer.jsx
+            |-- VideoSubmitForm.jsx
+        |-- index.css
+        |-- main.jsx
+        |-- services
+            |-- api.js
+    |-- vite.config.js
+|-- scripts
+    |-- .gitkeep
+|-- tests
+    |-- .gitkeep
+    |-- test_api.py
+    |-- test_embeddings.py
+    |-- test_query_engine.py
+    |-- test_transcription.py
+    |-- test_video_processor.py
