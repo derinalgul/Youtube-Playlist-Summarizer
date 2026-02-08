@@ -45,8 +45,14 @@ export default function ChatInterface({ onCitationClick }) {
   };
 
   const handleClear = async () => {
-    await clearHistory();
+    // Clear UI immediately
     setMessages([]);
+    // Then clear backend history
+    try {
+      await clearHistory();
+    } catch (err) {
+      console.error('Failed to clear history:', err);
+    }
   };
 
   return (

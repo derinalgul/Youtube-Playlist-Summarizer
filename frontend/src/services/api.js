@@ -46,6 +46,9 @@ export async function clearHistory() {
   const response = await fetch(`${API_BASE}/query/history`, {
     method: 'DELETE',
   });
+  if (!response.ok) {
+    throw new Error('Failed to clear history');
+  }
   return response.json();
 }
 
