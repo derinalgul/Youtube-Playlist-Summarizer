@@ -46,6 +46,7 @@
         |-- services
             |-- api.js
     |-- vite.config.js
+|-- requirements.txt
 |-- scripts
     |-- .gitkeep
 |-- tests

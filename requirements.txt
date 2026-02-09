@@ -1,0 +1,28 @@
+# YouTube Knowledge Base - Dependencies
+
+# Web Framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+
+# Video Processing
+yt-dlp>=2024.1.0
+youtube-transcript-api>=0.6.0
+
+# Caching
+diskcache>=5.6.0
+
+# Data Models & Validation
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Vector Database & Embeddings
+chromadb>=0.4.0
+openai>=1.0.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# Testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+httpx>=0.24.0
