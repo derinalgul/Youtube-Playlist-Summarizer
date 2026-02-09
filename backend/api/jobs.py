@@ -14,6 +14,61 @@ from backend.services.video_processor import VideoProcessor
 logger = logging.getLogger(__name__)
 
 
+class RateLimitDetected(Exception):
+    """Raised internally when a rate limit error is detected during processing."""
+
+    pass
+
+
+def _is_rate_limit_error(error: Exception) -> bool:
+    """Check if an exception is caused by API rate limiting.
+
+    Checks OpenAI, YouTube transcript API, yt-dlp, and the custom
+    VideoProcessor RateLimitError. Also checks wrapped causes
+    (e.g. EmbeddingGenerationError wrapping an OpenAI RateLimitError).
+    """
+    # OpenAI rate limit (HTTP 429)
+    try:
+        from openai import RateLimitError as OpenAIRateLimitError
+
+        if isinstance(error, OpenAIRateLimitError):
+            return True
+    except ImportError:
+        pass
+
+    # YouTube transcript API blocking
+    try:
+        from youtube_transcript_api._errors import RequestBlocked
+
+        if isinstance(error, RequestBlocked):
+            return True
+    except ImportError:
+        pass
+
+    # Custom video processor rate limit
+    from backend.services.video_processor import RateLimitError as VideoRateLimitError
+
+    if isinstance(error, VideoRateLimitError):
+        return True
+
+    # yt-dlp rate limit (embedded in DownloadError message)
+    try:
+        from yt_dlp.utils import DownloadError
+
+        if isinstance(error, DownloadError):
+            msg = str(error).lower()
+            if "429" in msg or "rate limit" in msg or "too many requests" in msg:
+                return True
+    except ImportError:
+        pass
+
+    # Check wrapped cause (e.g. EmbeddingGenerationError wrapping OpenAI RateLimitError)
+    if error.__cause__ is not None:
+        return _is_rate_limit_error(error.__cause__)
+
+    return False
+
+
 class Job:
     """Represents a video processing job."""
 
@@ -91,23 +146,56 @@ class JobManager:
         task = asyncio.create_task(self._process_job(job))
         self._running_tasks[job_id] = task
 
+    def _get_unprocessed_video_ids(self, job: Job) -> List[str]:
+        """Get video IDs that haven't been successfully indexed."""
+        return [
+            vid for vid in job.video_ids
+            if vid not in job.videos or not job.videos[vid].indexed
+        ]
+
     async def _process_job(self, job: Job):
-        """Process all videos in a job."""
+        """Process all videos, falling back through strategies on rate limits.
+
+        Tries fully parallel first, then bounded parallelism (semaphore of 3),
+        then sequential. Only falls back when rate limit errors are detected;
+        other errors are handled per-video without switching strategy.
+        """
         job.status = JobStatus.PROCESSING
         job.message = "Processing videos..."
 
-        try:
-            for video_id in job.video_ids:
-                try:
-                    await self._process_video(job, video_id)
-                except Exception as e:
-                    logger.error(f"Error processing video {video_id}: {e}")
-                    # Continue with other videos
-                    if video_id in job.videos:
-                        job.videos[video_id].indexed = False
+        strategies = [
+            ("parallel", self._process_parallel),
+            ("bounded parallel", self._process_bounded),
+            ("sequential", self._process_sequential),
+        ]
 
-                job.videos_processed += 1
-                job.message = f"Processed {job.videos_processed}/{len(job.video_ids)} videos"
+        try:
+            for strategy_name, strategy_fn in strategies:
+                remaining = self._get_unprocessed_video_ids(job)
+                if not remaining:
+                    break
+
+                try:
+                    logger.info(
+                        f"Job {job.job_id}: trying {strategy_name} strategy "
+                        f"for {len(remaining)} video(s)"
+                    )
+                    job.message = f"Processing videos ({strategy_name})..."
+                    await strategy_fn(job, remaining)
+                    break  # Success — no rate limit detected
+                except RateLimitDetected as e:
+                    logger.warning(
+                        f"Job {job.job_id}: {strategy_name} hit rate limit: {e}. "
+                        f"Falling back to next strategy."
+                    )
+                    continue
+            else:
+                # All strategies exhausted due to rate limits
+                job.status = JobStatus.FAILED
+                job.error = "All processing strategies exhausted due to rate limits"
+                job.message = "Job failed: rate limited by external APIs"
+                logger.error(f"Job {job.job_id}: all strategies exhausted")
+                return
 
             job.status = JobStatus.COMPLETED
             job.message = f"Successfully processed {job.videos_processed} videos"
@@ -118,6 +206,95 @@ class JobManager:
             job.error = str(e)
             job.message = f"Job failed: {e}"
             logger.error(f"Job {job.job_id} failed: {e}")
+
+    async def _process_parallel(self, job: Job, video_ids: List[str]):
+        """Process videos fully in parallel using asyncio.gather."""
+
+        async def _safe_process(video_id: str):
+            try:
+                await self._process_video(job, video_id)
+                return (video_id, None)
+            except Exception as e:
+                return (video_id, e)
+
+        tasks = [_safe_process(vid) for vid in video_ids]
+        results = await asyncio.gather(*tasks)
+
+        rate_limit_errors = []
+        for video_id, error in results:
+            if error is None:
+                job.videos_processed += 1
+            elif _is_rate_limit_error(error):
+                rate_limit_errors.append((video_id, error))
+            else:
+                job.videos_processed += 1
+                logger.error(f"Error processing video {video_id}: {error}")
+                if video_id in job.videos:
+                    job.videos[video_id].indexed = False
+
+        job.message = f"Processed {job.videos_processed}/{len(job.video_ids)} videos"
+
+        if rate_limit_errors:
+            raise RateLimitDetected(
+                f"Rate limit hit for {len(rate_limit_errors)} video(s) "
+                f"during parallel processing"
+            )
+
+    async def _process_bounded(self, job: Job, video_ids: List[str]):
+        """Process videos with bounded parallelism (max 3 concurrent)."""
+        semaphore = asyncio.Semaphore(3)
+        rate_limit_hit = False
+
+        async def _bounded_process(video_id: str):
+            nonlocal rate_limit_hit
+            if rate_limit_hit:
+                return
+
+            async with semaphore:
+                if rate_limit_hit:
+                    return
+
+                try:
+                    await self._process_video(job, video_id)
+                    job.videos_processed += 1
+                    job.message = (
+                        f"Processed {job.videos_processed}/{len(job.video_ids)} videos"
+                    )
+                except Exception as e:
+                    if _is_rate_limit_error(e):
+                        rate_limit_hit = True
+                        return
+                    job.videos_processed += 1
+                    logger.error(f"Error processing video {video_id}: {e}")
+                    if video_id in job.videos:
+                        job.videos[video_id].indexed = False
+
+        tasks = [_bounded_process(vid) for vid in video_ids]
+        await asyncio.gather(*tasks)
+
+        if rate_limit_hit:
+            raise RateLimitDetected(
+                "Rate limit hit during bounded parallel processing"
+            )
+
+    async def _process_sequential(self, job: Job, video_ids: List[str]):
+        """Process videos one at a time (original approach)."""
+        for video_id in video_ids:
+            try:
+                await self._process_video(job, video_id)
+            except Exception as e:
+                if _is_rate_limit_error(e):
+                    raise RateLimitDetected(
+                        f"Rate limit hit during sequential processing: {e}"
+                    )
+                logger.error(f"Error processing video {video_id}: {e}")
+                if video_id in job.videos:
+                    job.videos[video_id].indexed = False
+
+            job.videos_processed += 1
+            job.message = (
+                f"Processed {job.videos_processed}/{len(job.video_ids)} videos"
+            )
 
     async def _process_video(self, job: Job, video_id: str):
         """Process a single video."""

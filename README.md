@@ -150,7 +150,7 @@ Build a web application that converts YouTube playlists into an intelligent, sea
    npm run dev
    ```
 
-3. **Open your browser:**
+3. **Open browser:**
    - Frontend: http://localhost:3000
    - API docs: http://localhost:8000/docs
 

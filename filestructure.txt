@@ -52,6 +52,7 @@
     |-- .gitkeep
     |-- test_api.py
     |-- test_embeddings.py
+    |-- test_job_strategies.py
     |-- test_query_engine.py
     |-- test_transcription.py
     |-- test_video_processor.py
