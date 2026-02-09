@@ -26,7 +26,7 @@ export default function App() {
     <div className="app">
       <header>
         <h1>YouTube Knowledge Base</h1>
-        <Stats refreshTrigger={refreshStats} />
+        <Stats refreshTrigger={refreshStats} onCacheCleared={handleJobComplete} />
       </header>
 
       <main>

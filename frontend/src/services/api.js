@@ -52,6 +52,17 @@ export async function clearHistory() {
   return response.json();
 }
 
+export async function clearCache() {
+  const response = await fetch(`${API_BASE}/cache`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to clear cache');
+  }
+  return response.json();
+}
+
 export async function getStats() {
   const response = await fetch(`${API_BASE}/stats`);
   if (!response.ok) {

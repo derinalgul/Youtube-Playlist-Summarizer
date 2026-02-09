@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { getStats } from '../services/api';
+import { getStats, clearCache } from '../services/api';
 
-export default function Stats({ refreshTrigger }) {
+export default function Stats({ refreshTrigger, onCacheCleared }) {
   const [stats, setStats] = useState(null);
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -17,6 +18,22 @@ export default function Stats({ refreshTrigger }) {
     fetchStats();
   }, [refreshTrigger]);
 
+  const handleClearCache = async () => {
+    if (!window.confirm('Clear all cached data? You will need to re-submit videos.')) {
+      return;
+    }
+
+    setClearing(true);
+    try {
+      await clearCache();
+      onCacheCleared?.();
+    } catch (err) {
+      console.error('Failed to clear cache:', err);
+    } finally {
+      setClearing(false);
+    }
+  };
+
   if (!stats) return null;
 
   return (
@@ -29,6 +46,14 @@ export default function Stats({ refreshTrigger }) {
         <span className="stat-value">{stats.total_chunks}</span>
         <span className="stat-label">Chunks</span>
       </div>
+      <button
+        className="clear-cache-btn"
+        onClick={handleClearCache}
+        disabled={clearing}
+        title="Clear all cached videos and embeddings"
+      >
+        {clearing ? 'Clearing...' : 'Clear Cache'}
+      </button>
     </div>
   );
 }

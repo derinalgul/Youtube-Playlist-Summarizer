@@ -207,6 +207,31 @@ async def clear_conversation_history(
     return {"message": "Conversation history cleared"}
 
 
+# ============== Cache Management ==============
+
+
+@router.delete("/cache", tags=["Cache"])
+async def clear_cache(
+    video_processor: VideoProcessor = Depends(get_video_processor),
+    embeddings: EmbeddingsService = Depends(get_embeddings_service),
+    job_manager: JobManager = Depends(get_job_manager),
+):
+    """Clear all cached data (metadata, captions, and embeddings)."""
+    try:
+        metadata_cleared = video_processor.clear_cache()
+        chunks_cleared = embeddings.clear_collection()
+        job_manager.clear_jobs()
+
+        return {
+            "message": "Cache cleared successfully",
+            "metadata_cleared": metadata_cleared,
+            "chunks_cleared": chunks_cleared,
+        }
+    except Exception as e:
+        logger.error(f"Error clearing cache: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ============== Collection Stats ==============
 
 

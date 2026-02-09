@@ -134,6 +134,11 @@ class JobManager:
         """List all jobs."""
         return list(self._jobs.values())
 
+    def clear_jobs(self):
+        """Clear all jobs and running tasks."""
+        self._jobs.clear()
+        self._running_tasks.clear()
+
     async def start_job(self, job_id: str):
         """Start processing a job in the background."""
         job = self._jobs.get(job_id)

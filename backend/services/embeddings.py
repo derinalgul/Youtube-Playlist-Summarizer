@@ -403,6 +403,30 @@ class EmbeddingsService:
         logger.info(f"Deleted {len(results['ids'])} chunks for video {video_id}")
         return len(results["ids"])
 
+    def clear_collection(self) -> int:
+        """
+        Delete all chunks from the collection.
+
+        Returns:
+            Number of chunks that were deleted
+        """
+        count = self._collection.count()
+        if count == 0:
+            return 0
+
+        collection_name = self._collection.name
+        collection_metadata = self._collection.metadata
+
+        # Drop and recreate the collection
+        self._chroma_client.delete_collection(collection_name)
+        self._collection = self._chroma_client.get_or_create_collection(
+            name=collection_name,
+            metadata=collection_metadata,
+        )
+
+        logger.info(f"Cleared {count} chunks from collection '{collection_name}'")
+        return count
+
     def is_video_indexed(self, video_id: str) -> bool:
         """
         Check if a video is already indexed.
