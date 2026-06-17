@@ -1,4 +1,4 @@
-# YouTube Knowledge Base - Project Prompt
+# YouTube Knowledge Base
 
 ## Overview
 Build a web application that converts YouTube playlists into an intelligent, searchable knowledge base. Users paste a playlist URL, the system processes all videos (extracting captions or transcribing audio), and creates a semantic search interface where users can ask questions and receive answers with precise video timestamps as citations.
