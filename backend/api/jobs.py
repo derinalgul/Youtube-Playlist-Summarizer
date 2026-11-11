@@ -157,7 +157,8 @@ class JobManager:
             vid for vid in job.video_ids
             if vid not in job.videos or not job.videos[vid].indexed
         ]
-
+        #job.videos is a dict, key is video id, value is VideoInfo object which is an object from the schemas.py class. 
+        #Indexed = True means that the video's trancsript has been split into chunks and saved to the vector database, so /api/query can now search it. 
     async def _process_job(self, job: Job):
         """Process all videos, falling back through strategies on rate limits.
 

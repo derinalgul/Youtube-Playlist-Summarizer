@@ -115,46 +115,101 @@ Build a web application that converts YouTube playlists into an intelligent, sea
 ## How to Run
 
 ### Prerequisites
-- Python 3.9+
+- [uv](https://docs.astral.sh/uv/) (installs Python and manages the virtual environment)
+- Python 3.12 (installed via uv, see below)
 - Node.js 18+
 - OpenAI API key
 
 ### Setup
 
-1. **Install Python dependencies:**
+The backend runs inside a project-local virtual environment (`.venv/`), so its
+packages stay isolated from your system Python and other projects. `.venv/` is
+git-ignored; each machine creates its own.
+
+1. **Install uv** (once per machine), with Homebrew:
    ```bash
-   pip install -r requirements.txt
+   brew install uv
+   ```
+   or with the official installer:
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
-2. **Create `.env` file:**
+2. **Install Python 3.12** (once per machine, can be run from any directory):
+   ```bash
+   uv python install 3.12
+   ```
+
+3. **Create the virtual environment** (run from the project root):
+   ```bash
+   uv venv --python 3.12
+   ```
+
+4. **Activate it and install Python dependencies:**
+   ```bash
+   source .venv/bin/activate
+   uv pip install -r requirements.txt
+   ```
+
+5. **Create `.env` file:**
    ```
    OPENAI_API_KEY=your_api_key_here
    ```
 
-3. **Install frontend dependencies:**
+6. **Install frontend dependencies** (then return to the project root):
    ```bash
    cd frontend
    npm install
+   cd ..
    ```
+
+### Using the Virtual Environment
+
+All Python commands below (backend, tests) must run inside the venv.
+
+- **Activate** (in every new terminal, from the project root):
+  ```bash
+  source .venv/bin/activate
+  ```
+  Your prompt shows `(Youtube Knowledge Base)` (uv names the venv after the project
+  folder) while it's active, and `python` / `pip` point to the venv.
+- **Deactivate** (leave the venv, back to system Python):
+  ```bash
+  deactivate
+  ```
+- **Run without activating:** prefix commands with `uv run`, e.g.
+  `uv run uvicorn backend.api.app:app --reload`.
+- **Add a new dependency:** add it to `requirements.txt`, then run
+  `uv pip install -r requirements.txt` with the venv active.
+- **Rebuild from scratch** (if the venv gets broken):
+  ```bash
+  deactivate 2>/dev/null; rm -rf .venv
+  uv venv --python 3.12 && source .venv/bin/activate && uv pip install -r requirements.txt
+  ```
+- **VS Code:** run *Python: Select Interpreter* and choose `./.venv/bin/python`
+  so the editor and test runner use the same packages.
 
 ### Running the Application
 
-1. **Start the backend API:**
+1. **Start the backend API** (from the project root, with the venv active):
    ```bash
-   python3 -m uvicorn backend.api.app:app --reload
+   python -m uvicorn backend.api.app:app --reload
    ```
+   Stop the server with `Ctrl+C`.
 
 2. **Start the frontend (in a new terminal):**
    ```bash
    cd frontend
    npm run dev
    ```
+   Stop it with `Ctrl+C`.
 
 3. **Open browser:**
    - Frontend: http://localhost:3000
    - API docs: http://localhost:8000/docs
 
 ### Running Tests
+With the venv active:
 ```bash
-python3 -m pytest tests/ -v
+python -m pytest tests/ -v
 ```

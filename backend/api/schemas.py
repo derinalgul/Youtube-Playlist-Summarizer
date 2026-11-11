@@ -1,4 +1,12 @@
-"""API request and response schemas."""
+"""API request and response schemas.
+
+Each class is tagged with its direction:
+  [REQUEST]  - payload the client sends TO the API (request body)
+  [RESPONSE] - payload the API sends BACK to the client
+  [NESTED]   - not sent on its own; only appears inside another schema
+
+Endpoint paths below are relative to the "/api" prefix (see app.py).
+"""
 
 from datetime import datetime
 from enum import Enum
@@ -7,6 +15,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, HttpUrl
 
 
+# [NESTED] Enum used in JobResponse / JobStatusResponse (also used internally by jobs.py)
 class JobStatus(str, Enum):
     """Status of a processing job."""
 
@@ -19,6 +28,7 @@ class JobStatus(str, Enum):
 # ============== Video/Playlist Submission ==============
 
 
+# [REQUEST] POST /videos
 class VideoSubmitRequest(BaseModel):
     """Request to submit a video or playlist for processing."""
 
@@ -30,6 +40,7 @@ class VideoSubmitRequest(BaseModel):
         }
 
 
+# [NESTED] Inside JobResponse.videos / JobStatusResponse.videos
 class VideoInfo(BaseModel):
     """Information about a processed video."""
 
@@ -41,6 +52,7 @@ class VideoInfo(BaseModel):
     chunks_count: int = 0
 
 
+# [RESPONSE] POST /videos
 class JobResponse(BaseModel):
     """Response after submitting a video/playlist."""
 
@@ -51,6 +63,7 @@ class JobResponse(BaseModel):
     created_at: datetime
 
 
+# [RESPONSE] GET /jobs/{job_id}, GET /jobs (as a list)
 class JobStatusResponse(BaseModel):
     """Response for job status check."""
 
@@ -69,6 +82,7 @@ class JobStatusResponse(BaseModel):
 # ============== Query ==============
 
 
+# [REQUEST] POST /query
 class QueryRequest(BaseModel):
     """Request to query the knowledge base."""
 
@@ -87,6 +101,7 @@ class QueryRequest(BaseModel):
         }
 
 
+# [NESTED] Inside QueryResponse.citations
 class CitationResponse(BaseModel):
     """A citation in the query response."""
 
@@ -98,6 +113,7 @@ class CitationResponse(BaseModel):
     text_snippet: str
 
 
+# [RESPONSE] POST /query
 class QueryResponse(BaseModel):
     """Response from the query endpoint."""
 
@@ -110,6 +126,7 @@ class QueryResponse(BaseModel):
 # ============== Collection Stats ==============
 
 
+# [RESPONSE] GET /stats
 class CollectionStatsResponse(BaseModel):
     """Statistics about the indexed collection."""
 
@@ -121,6 +138,7 @@ class CollectionStatsResponse(BaseModel):
 # ============== Health Check ==============
 
 
+# [RESPONSE] GET /health
 class HealthResponse(BaseModel):
     """Health check response."""
 
