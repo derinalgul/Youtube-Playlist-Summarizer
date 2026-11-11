@@ -201,8 +201,8 @@ class EmbeddingsService:
             metadata={"hnsw:space": "cosine"},
         )
 
-        self._chunk_size = 500
-        self._chunk_overlap = 50
+        self._chunk_size = settings.chunk_size
+        self._chunk_overlap = settings.overlap
 
         logger.info(
             f"EmbeddingsService initialized with collection '{collection_name}'"
