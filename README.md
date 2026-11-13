@@ -1,215 +1,77 @@
 # YouTube Knowledge Base
 
-## Overview
-Build a web application that converts YouTube playlists into an intelligent, searchable knowledge base. Users paste a playlist URL, the system processes all videos (extracting captions or transcribing audio), and creates a semantic search interface where users can ask questions and receive answers with precise video timestamps as citations.
+Paste a YouTube playlist, ask questions in plain English, and get answers that cite the exact moment in the video. Click a citation and the embedded player jumps to that timestamp.
 
-## Core Functionality
-1. **Video Ingestion**: Accept YouTube playlist/video URLs, extract metadata, download captions
-2. **Transcription Pipeline**: Extract YouTube captions (manual preferred, auto-generated fallback)
-3. **Knowledge Extraction**: Chunk transcripts, generate embeddings, store in vector database
-4. **Intelligent Query**: Natural language Q&A with LLM that cites specific video timestamps
-5. **Interactive Interface**: Web UI with embedded video player that jumps to referenced timestamps
+**Stack:** FastAPI · ChromaDB · OpenAI (`text-embedding-3-small`, `gpt-4o-mini`) · React + Vite · pytest (67 tests)
 
-## Project Modules
+<!-- Add a GIF here: paste a playlist → ask a question → click a citation → player jumps -->
+<!-- ![demo](docs/demo.gif) -->
 
-### Module 1: Video Processor 
-- YouTube URL parsing and validation
-- Metadata extraction (title, duration, thumbnail, channel)
-- Caption detection and downloading
-- Cache management to avoid re-processing
-
-### Module 2: Transcription Service 
-- Manual caption preference (prioritized over auto-generated)
-- Auto-generated caption fallback (~95% of videos have these)
-- Timestamp alignment and formatting
-- Transcript caching and retrieval
-
-### Module 3: Vector Database & Embeddings 
-- Text chunking strategy (preserve context + timestamps)
-- Embedding generation (OpenAI text-embedding-3-small)
-- Vector DB setup (ChromaDB)
-- Semantic search functionality
-
-### Module 4: LLM Query Engine 
-- Question processing and embedding
-- Relevant chunk retrieval
-- Context assembly for LLM
-- Answer synthesis with timestamp citations
-- Conversation history management
-
-### Module 5: API Backend 
-- RESTful endpoints (submit playlist, query, get status)
-- Background job processing (async video indexing)
-- Request/response schemas with validation
-- Error handling and validation
-
-### Module 6: Frontend Interface 
-- Playlist submission form
-- Processing status dashboard
-- Chat interface for questions
-- Video player with timestamp navigation
-
-## Folder Structure
+## How it works
 
 ```
-|-- .env
-|-- .gitignore
-|-- .gitkeep
-|-- .pytest_cache
-    |-- .gitignore
-    |-- CACHEDIR.TAG
-    |-- README.md
-    |-- v
-|-- README.md
-|-- backend
-    |-- __init__.py
-    |-- api
-        |-- __init__.py
-        |-- app.py
-        |-- jobs.py
-        |-- routes.py
-        |-- schemas.py
-    |-- config
-        |-- __init__.py
-        |-- settings.py
-    |-- models
-        |-- __init__.py
-        |-- video.py
-    |-- services
-        |-- __init__.py
-        |-- embeddings.py
-        |-- query_engine.py
-        |-- transcription.py
-        |-- video_processor.py
-|-- docs
-    |-- .gitkeep
-|-- frontend
-    |-- index.html
-    |-- package-lock.json
-    |-- package.json
-    |-- src
-        |-- App.jsx
-        |-- components
-            |-- ChatInterface.jsx
-            |-- JobStatus.jsx
-            |-- Stats.jsx
-            |-- VideoPlayer.jsx
-            |-- VideoSubmitForm.jsx
-        |-- index.css
-        |-- main.jsx
-        |-- services
-            |-- api.js
-    |-- vite.config.js
-|-- requirements.txt
-|-- scripts
-    |-- .gitkeep
-|-- tests
-    |-- .gitkeep
-    |-- test_api.py
-    |-- test_embeddings.py
-    |-- test_query_engine.py
-    |-- test_transcription.py
-    |-- test_video_processor.py
+Playlist URL
+   │
+   ▼
+Video Processor ──► Transcription ──► Chunking + Embeddings ──► ChromaDB
+ (yt-dlp, cache)    (manual captions      (timestamped chunks,
+                     first, auto as        500 chars, 50 overlap)
+                     fallback)                                     │
+                                                                   ▼
+Question ──► embed ──► top-5 chunk retrieval ──► gpt-4o-mini ──► Answer + timestamp citations
 ```
 
-## How to Run
+Indexing runs as background jobs, so the UI shows per-video progress while a playlist is processed, and you can start asking questions as soon as videos finish.
 
-### Prerequisites
-- [uv](https://docs.astral.sh/uv/) (installs Python and manages the virtual environment)
-- Python 3.12 (installed via uv, see below)
-- Node.js 18+
-- OpenAI API key
+## Design decisions
 
-### Setup
+- **Chunks are built from whole caption segments.** Each chunk knows exactly when it starts and ends in the video, which is what makes citations clickable instead of approximate.
+- **Small chunks (500 characters, 50 overlap).** This favors precise search and tight 15 to 30 second citation windows over long context per chunk. The overlap keeps ideas that straddle a boundary findable. Both are configurable through `YKB_CHUNK_SIZE` and `YKB_OVERLAP`. See [docs/repo-analysis.md](docs/repo-analysis.md) for the tradeoffs.
+- **Manual captions first, auto-generated as fallback.** Manual captions are more accurate, and auto captions cover roughly 95% of videos, so almost any playlist can be indexed without paying for audio transcription.
+- **Rate limit aware processing.** Jobs start fully parallel. If YouTube, yt-dlp or OpenAI returns a rate limit (including errors wrapped inside other exceptions), the job falls back to bounded parallelism (3 at a time), then to sequential. Already indexed videos are never reprocessed. Other errors are handled per video without slowing the whole job down.
+- **Caching with TTLs.** Metadata, captions and playlists are cached (7, 30 and 1 days), so resubmitting a playlist doesn't refetch or re-embed what's already there.
+- **Bounded conversation history.** Follow-up questions keep the last 10 messages for context without letting prompts grow without limit.
 
-The backend runs inside a project-local virtual environment (`.venv/`), so its
-packages stay isolated from your system Python and other projects. `.venv/` is
-git-ignored; each machine creates its own.
+## Project structure
 
-1. **Install uv** (once per machine), with Homebrew:
-   ```bash
-   brew install uv
-   ```
-   or with the official installer:
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
+```
+backend/
+  api/        FastAPI app, routes, request/response schemas, background job manager
+  services/   video_processor, transcription, embeddings (chunking + ChromaDB), query_engine
+  models/     caption and video data models
+  config/     settings (env vars prefixed with YKB_)
+frontend/     React app: submit form, job status, chat, video player
+tests/        pytest suite for every service, the API and the job fallback strategies
+docs/         design notes
+```
 
-2. **Install Python 3.12** (once per machine, can be run from any directory):
-   ```bash
-   uv python install 3.12
-   ```
+## Running locally
 
-3. **Create the virtual environment** (run from the project root):
-   ```bash
-   uv venv --python 3.12
-   ```
+**Prerequisites:** [uv](https://docs.astral.sh/uv/), Node.js 18+, an OpenAI API key.
 
-4. **Activate it and install Python dependencies:**
-   ```bash
-   source .venv/bin/activate
-   uv pip install -r requirements.txt
-   ```
-
-5. **Create `.env` file:**
-   ```
-   OPENAI_API_KEY=your_api_key_here
-   ```
-
-6. **Install frontend dependencies** (then return to the project root):
-   ```bash
-   cd frontend
-   npm install
-   cd ..
-   ```
-
-### Using the Virtual Environment
-
-All Python commands below (backend, tests) must run inside the venv.
-
-- **Activate** (in every new terminal, from the project root):
-  ```bash
-  source .venv/bin/activate
-  ```
-  Your prompt shows `(Youtube Knowledge Base)` (uv names the venv after the project
-  folder) while it's active, and `python` / `pip` point to the venv.
-- **Deactivate** (leave the venv, back to system Python):
-  ```bash
-  deactivate
-  ```
-- **Run without activating:** prefix commands with `uv run`, e.g.
-  `uv run uvicorn backend.api.app:app --reload`.
-- **Add a new dependency:** add it to `requirements.txt`, then run
-  `uv pip install -r requirements.txt` with the venv active.
-- **Rebuild from scratch** (if the venv gets broken):
-  ```bash
-  deactivate 2>/dev/null; rm -rf .venv
-  uv venv --python 3.12 && source .venv/bin/activate && uv pip install -r requirements.txt
-  ```
-- **VS Code:** run *Python: Select Interpreter* and choose `./.venv/bin/python`
-  so the editor and test runner use the same packages.
-
-### Running the Application
-
-1. **Start the backend API** (from the project root, with the venv active):
-   ```bash
-   python -m uvicorn backend.api.app:app --reload
-   ```
-   Stop the server with `Ctrl+C`.
-
-2. **Start the frontend (in a new terminal):**
-   ```bash
-   cd frontend
-   npm run dev
-   ```
-   Stop it with `Ctrl+C`.
-
-3. **Open browser:**
-   - Frontend: http://localhost:3000
-   - API docs: http://localhost:8000/docs
-
-### Running Tests
-With the venv active:
 ```bash
+# Backend
+uv python install 3.12
+uv venv --python 3.12
+source .venv/bin/activate
+uv pip install -r requirements.txt
+echo "OPENAI_API_KEY=your_api_key_here" > .env
+python -m uvicorn backend.api.app:app --reload     # API docs at http://localhost:8000/docs
+
+# Frontend (new terminal)
+cd frontend && npm install && npm run dev          # app at http://localhost:3000
+
+# Tests (venv active)
 python -m pytest tests/ -v
 ```
+
+<details>
+<summary>Virtual environment tips</summary>
+
+- Activate in every new terminal with `source .venv/bin/activate`, leave with `deactivate`.
+- Or skip activation and prefix commands with `uv run`, for example `uv run uvicorn backend.api.app:app --reload`.
+- Add a dependency: put it in `requirements.txt`, then `uv pip install -r requirements.txt`.
+- Rebuild a broken venv: `rm -rf .venv && uv venv --python 3.12 && source .venv/bin/activate && uv pip install -r requirements.txt`.
+- VS Code: run *Python: Select Interpreter* and pick `./.venv/bin/python`.
+
+</details>
