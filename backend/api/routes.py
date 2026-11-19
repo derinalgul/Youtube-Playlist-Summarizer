@@ -166,6 +166,7 @@ async def query_knowledge_base(
         response = query_engine.query(
             question=request.question,
             video_ids=request.video_ids,
+            top_k=request.top_k,
         )
 
         # Convert citations to response format

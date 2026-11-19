@@ -217,6 +217,7 @@ The user's question will be followed by relevant transcript excerpts with timest
         question: str,
         video_ids: Optional[List[str]] = None,
         include_history: bool = True,
+        top_k: Optional[int] = None,
     ) -> QueryResponse:
         """
         Answer a question using indexed video transcripts.
@@ -225,6 +226,7 @@ The user's question will be followed by relevant transcript excerpts with timest
             question: The user's question
             video_ids: Optional list of video IDs to search within
             include_history: Whether to include conversation history
+            top_k: Number of chunks to retrieve (defaults to max_context_chunks)
 
         Returns:
             QueryResponse with answer and citations
@@ -232,7 +234,7 @@ The user's question will be followed by relevant transcript excerpts with timest
         # Search for relevant chunks
         search_results = self._embeddings.search(
             query=question,
-            top_k=self._max_context_chunks,
+            top_k=top_k if top_k is not None else self._max_context_chunks,
             video_ids=video_ids,
         )
 
